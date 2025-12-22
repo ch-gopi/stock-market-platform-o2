@@ -25,6 +25,7 @@ public class UserService implements UserDetailsService {
     }
 
     public void register(String username, String rawPassword) {
+        if (repo.existsByUsername(username)) { throw new IllegalArgumentException("Username already exists"); }
         User user = new User();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(rawPassword));
