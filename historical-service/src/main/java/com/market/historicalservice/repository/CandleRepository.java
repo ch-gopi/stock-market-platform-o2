@@ -15,16 +15,45 @@ import java.util.concurrent.ConcurrentHashMap;
 public interface CandleRepository extends JpaRepository<CandleEntity, Long> {
 
 
+        @Query(value = """
+        SELECT DISTINCT ON (day)
+            symbol,
+            day * 1000 AS day_ts,
+            open,
+            high,
+            low,
+            close,
+            volume
+        FROM (
+            SELECT
+                symbol,
+                (timestamp / 1000 / 86400) * 86400 AS day,
+                FIRST_VALUE(open) OVER w AS open,
+                MAX(high)         OVER w AS high,
+                MIN(low)          OVER w AS low,
+                LAST_VALUE(close) OVER w AS close,
+                SUM(volume)       OVER w AS volume
+            FROM candles
+            WHERE symbol = :symbol
+              AND timestamp BETWEEN :startTs AND :endTs
+            WINDOW w AS (
+                PARTITION BY (timestamp / 1000 / 86400)
+                ORDER BY timestamp
+                ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+            )
+        ) AS t
+        ORDER BY day DESC
+        """,
+                nativeQuery = true
+        )
+        List<Object[]> findDailyCandles(
+                @Param("symbol") String symbol,
+                @Param("startTs") long startTs,
+                @Param("endTs") long endTs
+        );
+    }
 
-    @Query("SELECT new com.market.historicalservice.dto.CandleDto(c.symbol, c.timestamp, c.open, c.high, c.low, c.close, c.volume) " +
-            "FROM CandleEntity c " +
-            "WHERE c.symbol = :symbol AND c.timestamp BETWEEN :startTs AND :endTs " +
-            "ORDER BY c.timestamp ASC")
-    List<CandleDto> findBySymbolAndTimestampBetween(@Param("symbol") String symbol,
-                                                    @Param("startTs") long startTs,
-                                                    @Param("endTs") long endTs);
 
-}
 
 
 /*

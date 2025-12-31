@@ -50,14 +50,14 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // public endpoints
-                        .pathMatchers("/auth/register", "/auth/login").permitAll()
+                        .pathMatchers("/auth/register", "/auth/login","/auth/refresh").permitAll()
                         .pathMatchers("/ws-quotes/**", "/ws-watchlist/**").permitAll()
-
+                        .pathMatchers("/actuator/**").permitAll()
                         // protected endpoints
                         .pathMatchers("/auth/me").authenticated()
                         .anyExchange().authenticated()
                 )
-                // ✅ JWT validation via Keycloak
+                //  JWT validation via Keycloak
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtDecoder(jwtDecoder())));
 
         return http.build();
@@ -78,7 +78,7 @@ public class SecurityConfig {
     }
 
     /**
-     * ✅ Hybrid JWT Decoder:
+     *  Hybrid JWT Decoder:
      * - First tries Keycloak (RSA via JWKS)
      * - Falls back to HMAC secret for legacy tokens
      */

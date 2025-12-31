@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import com.market.common.dto.FinQuoteTickEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,7 @@ import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
+@Slf4j
 @Service
 public class FinnhubWebSocketClient {
 
@@ -72,6 +73,7 @@ public class FinnhubWebSocketClient {
                                     .timestamp(trade.get("t").asLong())
                                     .volume(trade.get("v").asDouble())
                                     .build();
+                            log.info("Producing tick to Kafka: {}", tick);
                             kafkaTemplate.send("quotes.ticks", tick.getSymbol(), tick);
                         }
                     }

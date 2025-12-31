@@ -95,47 +95,49 @@ public class HistoricalService {
             this.candleRepository = candleRepository;
         }
 
-        public List<CandleDto> getCandles(String symbol, String range) {
+    public List<CandleDto> getCandles(String symbol, String range) {
 
-            String symbolNormalized = symbol.trim().toUpperCase(Locale.ROOT);
-            String rangeNormalized = range.trim().toLowerCase(Locale.ROOT);
+        String symbolNormalized = symbol.trim().toUpperCase(Locale.ROOT);
+        String rangeNormalized  = range.trim().toLowerCase(Locale.ROOT);
 
-            ZoneId zone = ZoneId.of("UTC");
-            ZonedDateTime now = ZonedDateTime.now(zone);
-            ZonedDateTime from;
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("UTC"));
+        ZonedDateTime from;
 
-            switch (rangeNormalized) {
-                case "1d" -> from = now.minusDays(1);
-                case "1w" -> from = now.minusWeeks(1);
-                case "1m" -> from = now.minusMonths(1);
-                case "3m" -> from = now.minusMonths(3);
-                case "6m" -> from = now.minusMonths(6);
-                case "1y" -> from = now.minusYears(1);
-                case "5y" -> from = now.minusYears(5);
-                default -> throw new IllegalArgumentException("Invalid range: " + range);
-            }
-
-            long startTs = from.toInstant().toEpochMilli();
-            long endTs   = now.toInstant().toEpochMilli();
-
-            log.info(
-                    "Historical query: symbol={}, startTs={}, endTs={}",
-                    symbolNormalized,
-                    startTs,
-                    endTs
-            );
-
-            List<CandleDto> result =
-                    candleRepository.findBySymbolAndTimestampBetween(
-                            symbolNormalized,
-                            startTs,
-                            endTs
-                    );
-
-            log.info("Historical result size: {}", result.size());
-            return result;
+        switch (rangeNormalized) {
+            case "1d" -> from = now.minusDays(1);
+            case "1w" -> from = now.minusWeeks(1);
+            case "1m" -> from = now.minusMonths(1);
+            case "3m" -> from = now.minusMonths(3);
+            case "6m" -> from = now.minusMonths(6);
+            case "1y" -> from = now.minusYears(1);
+            default -> throw new IllegalArgumentException("Invalid range: " + range);
         }
+
+        long startTs = from.toInstant().toEpochMilli();
+        long endTs   = now.toInstant().toEpochMilli();
+
+        log.info("Daily historical query: {} [{} - {}]",
+                symbolNormalized, startTs, endTs);
+
+        List<Object[]> rows =
+                candleRepository.findDailyCandles(symbolNormalized, startTs, endTs);
+
+        List<CandleDto> result = rows.stream()
+                .map(r -> new CandleDto(
+                        (String) r[0],              // symbol
+                        ((Number) r[1]).longValue(),// start-of-day timestamp
+                        ((Number) r[2]).doubleValue(), // open
+                        ((Number) r[3]).doubleValue(), // high
+                        ((Number) r[4]).doubleValue(), // low
+                        ((Number) r[5]).doubleValue(), // close
+                        ((Number) r[6]).doubleValue()  // volume
+                ))
+                .toList();
+
+        log.info("Returned {} daily candles", result.size());
+        return result;
     }
+}
 
 /*
 

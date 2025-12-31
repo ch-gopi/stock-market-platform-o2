@@ -2,6 +2,8 @@ package com.market.userservice.security;
 
 import com.market.userservice.service.JwtService;
 import com.market.userservice.service.UserService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,9 +44,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
+        String username;
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        try {
+            username = jwtService.extractUsername(token);
+        } catch (ExpiredJwtException e) {
+            // Token expired → clear context & continue
+            SecurityContextHolder.clearContext();
+            chain.doFilter(request, response);
+            return;
+        } catch (JwtException e) {
+            // Invalid token
+            SecurityContextHolder.clearContext();
+            chain.doFilter(request, response);
+            return;
+        }
+
+        if (username != null &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
             UserDetails user = userService.loadUserByUsername(username);
 
             if (jwtService.isTokenValid(token, user)) {
@@ -59,10 +77,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.equals("/auth/login") || path.equals("/auth/register");
+        return path.equals("/auth/login") || path.equals("/auth/register")|| path.startsWith("/auth/refresh")|| path.startsWith("/actuator");
     }
+
+
 
 }

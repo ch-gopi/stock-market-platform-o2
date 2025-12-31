@@ -32,12 +32,13 @@ public class FinMarketSearchService {
         String cacheKey = "search:" + query.toUpperCase();
 
         // 1. Try cache first
-        StockSearchResultCache cached = (StockSearchResultCache) redisTemplate.opsForValue().get(cacheKey);
+        StockSearchResultCache cached =
+                (StockSearchResultCache) redisTemplate.opsForValue().get(cacheKey);
         if (cached != null && cached.getResults() != null) {
             return cached.getResults();
         }
 
-        // 2. Call Finnhub /search
+        // 2. Call Finnhub /search API
         FinnhubSearchResponse searchResponse = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/search")
@@ -46,86 +47,69 @@ public class FinMarketSearchService {
                         .build())
                 .retrieve()
                 .bodyToMono(FinnhubSearchResponse.class)
-                .timeout(Duration.ofSeconds(3)) // avoid hanging
+                .timeout(Duration.ofSeconds(3))
                 .block();
 
         if (searchResponse == null || searchResponse.getResult() == null) {
             return List.of();
         }
 
-        // 3. Map results with symbol details
+        // 3. Map search results (NO extra Finnhub calls)
         List<StockSearchDto> results = searchResponse.getResult().stream()
                 .map(result -> {
                     String exchange = detectExchange(result.getSymbol());
-                    FinnhubSymbolDetails details = null;
-
-                    try {
-                        List<FinnhubSymbolDetails> symbols = webClient.get()
-                                .uri(uriBuilder -> uriBuilder
-                                        .path("/stock/symbol")
-                                        .queryParam("exchange", exchange)
-                                        .queryParam("token", apiKey)
-                                        .build())
-                                .retrieve()
-                                .bodyToFlux(FinnhubSymbolDetails.class)
-                                .timeout(Duration.ofSeconds(3))
-                                .collectList()
-                                .block();
-
-                        if (symbols != null) {
-                            details = symbols.stream()
-                                    .filter(d -> d.getSymbol().equals(result.getSymbol()))
-                                    .findFirst()
-                                    .orElse(null);
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Error fetching symbol details for " + result.getSymbol() + ": " + e.getMessage());
-                    }
-
                     Double score = result.getMatchScore();
 
                     return new StockSearchDto(
                             result.getSymbol(),
                             result.getDescription(),
                             result.getType(),
-                            details != null ? details.getMic() : "US",
-                            details != null ? details.getMarketOpen() : "09:30",
-                            details != null ? details.getMarketClose() : "16:00",
-                            details != null ? details.getTimezone() : "America/New_York",
-                            details != null ? details.getCurrency() : "USD",
-                            score != null ? score : 1.0000
+                            exchange,                    // exchange / MIC
+                            "09:30",                     // default market open
+                            "16:00",                     // default market close
+                            "America/New_York",          // default timezone
+                            "USD",                       // default currency
+                            score != null ? score : 1.0  // safe score
                     );
                 })
                 .toList();
 
-        // 4. Cache results with TTL
+        // 4. Cache results (TTL = 5 minutes)
         StockSearchResultCache cacheWrapper = new StockSearchResultCache();
         cacheWrapper.setResults(results);
-        redisTemplate.opsForValue().set(cacheKey, cacheWrapper, 300, TimeUnit.SECONDS);
+        redisTemplate.opsForValue()
+                .set(cacheKey, cacheWrapper, 300, TimeUnit.SECONDS);
 
         return results;
     }
 
-    // Fallback method for circuit breaker / retry
+    /**
+     * Fallback method for CircuitBreaker / Retry
+     */
     public List<StockSearchDto> fallbackSearch(String query, Throwable t) {
         String cacheKey = "search:" + query.toUpperCase();
-        StockSearchResultCache cached = (StockSearchResultCache) redisTemplate.opsForValue().get(cacheKey);
+        StockSearchResultCache cached =
+                (StockSearchResultCache) redisTemplate.opsForValue().get(cacheKey);
+
         if (cached != null && cached.getResults() != null) {
             System.err.println("Finnhub unavailable, serving cached results for " + query);
             return cached.getResults();
         }
+
         System.err.println("Finnhub unavailable, no cache found for " + query);
-        return List.of(); // safe default
+        return List.of();
     }
 
-
+    /**
+     * Detect exchange from symbol suffix
+     */
     private String detectExchange(String symbol) {
         if (symbol.endsWith(".TO")) return "TO";   // Toronto
         if (symbol.endsWith(".MX")) return "MX";   // Mexico
         if (symbol.endsWith(".VI")) return "VI";   // Vienna
         if (symbol.endsWith(".WA")) return "WA";   // Warsaw
         if (symbol.endsWith(".NE")) return "NE";   // Canada NEO
-        if (symbol.endsWith(".L"))  return "L";    // London
+        if (symbol.endsWith(".L")) return "L";    // London
         if (symbol.endsWith(".AS")) return "AS";   // Amsterdam
         if (symbol.endsWith(".RO")) return "RO";   // Bucharest
         if (symbol.endsWith(".SN")) return "SN";   // Santiago

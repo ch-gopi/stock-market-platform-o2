@@ -29,7 +29,7 @@ public class QuoteConsumer {
 
     }
 
-    @KafkaListener(topics = "quotes.ticks", groupId = "quotes-service",
+    @KafkaListener(topics = "quotes.ticks", groupId = "quotes-live-cache",
             containerFactory = "kafkaListenerContainerFactory")
     public void consume(FinQuoteTickEvent event) {
         log.info("Consumed tick: {}", event);

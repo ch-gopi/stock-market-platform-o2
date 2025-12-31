@@ -18,7 +18,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Table(name = "users")
 public class User implements UserDetails {
-
+/*    @Id
+    @Column(name = "sub", nullable = false, unique = true)
+    private String sub; // Keycloak 'sub' claim as primary key*/
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,10 +32,13 @@ public class User implements UserDetails {
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "roles")
     private List<String> roles;
 
-    public <E> User(Object o, String username, String password, String email, List<E> user) {
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

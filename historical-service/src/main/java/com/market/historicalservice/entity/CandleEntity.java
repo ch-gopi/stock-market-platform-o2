@@ -10,7 +10,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "candles")
+@Table(
+        name = "candles",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"symbol", "timestamp"})
+)
 
 public class CandleEntity {
     @Id
@@ -37,6 +40,20 @@ public class CandleEntity {
 
     @Column(name = "volume", nullable = false)
     private double volume;
-
+    public CandleEntity(String symbol,
+                        long timestamp,
+                        double open,
+                        double high,
+                        double low,
+                        double close,
+                        double volume) {
+        this.symbol = symbol;
+        this.timestamp = timestamp;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.volume = volume;
+    }
     // getters/setters
 }

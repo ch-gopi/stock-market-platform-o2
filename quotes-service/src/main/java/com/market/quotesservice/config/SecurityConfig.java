@@ -32,7 +32,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
                         .requestMatchers("/ws-quotes/**").permitAll()   // allow SockJS/WebSocket handshake
                         .requestMatchers("/auth/me").authenticated()
-                        .requestMatchers("/quotes/**").permitAll()  //  require JWT
+                        .requestMatchers("/quotes/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()//  require JWT
                         .anyRequest().authenticated()
                 )
                 // CORS: let the gateway handle it, so no local CorsConfigurationSource bean
