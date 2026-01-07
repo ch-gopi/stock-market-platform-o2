@@ -43,7 +43,7 @@ public class StockEventConsumer {
             meta.setChangePercent(quote.getChangePercent());
             meta.setVolume(quote.getVolume());
 
-            List<CandleDto> candles = historicalClient.getCandles(symbol, "1mo");
+            List<CandleDto> candles = historicalClient.getCandles(symbol, "1m");
             meta.setHistoricalPerformance(calculatePerformance(candles));
 
             stockMetaRepository.save(meta);
