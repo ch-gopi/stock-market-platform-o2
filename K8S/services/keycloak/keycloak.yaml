@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:25.0.4
+
+          args:
+            - start-dev
+            - --https-key-store-file=/opt/keycloak/conf/keycloak.p12
+            - --https-key-store-password=changeit
+            - --https-key-store-type=PKCS12
+
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 8443
+
+          env:
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: jdbc:postgresql://keycloak-postgres:5432/keycloak
+            - name: KC_DB_USERNAME
+              value: keycloak
+            - name: KC_DB_PASSWORD
+              value: keycloak
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
+            - name: JAVA_OPTS_APPEND
+              value: "-Xms256m -Xmx768m"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_PROXY
+              value: "edge"
+
+          volumeMounts:
+            - name: keycloak-tls
+              mountPath: /opt/keycloak/conf
+              readOnly: true
+
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /realms/master
+              port: https
+            initialDelaySeconds: 40
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /realms/master
+              port: https
+            initialDelaySeconds: 90
+            periodSeconds: 20
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+      volumes:
+        - name: keycloak-tls
+          secret:
+            secretName: keycloak-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: auth
+spec:
+  type: NodePort
+  selector:
+    app: keycloak
+  ports:
+    - name: https
+      port: 8443
+      targetPort: 8443
+      nodePort: 30443
