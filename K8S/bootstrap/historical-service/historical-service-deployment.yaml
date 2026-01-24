@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: historical-service
-        image: gopi/historical-service:latest
+        image: gopi99/historical-service:latest
         ports:
         - containerPort: 8094
         env:

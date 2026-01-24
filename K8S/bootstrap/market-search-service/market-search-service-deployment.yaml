@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: market-search-service
-        image: gopi/market-search-service:latest
+        image: gopi99/market-search-service:latest
         ports:
         - containerPort: 8090
         env:
