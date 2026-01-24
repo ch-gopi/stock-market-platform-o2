@@ -5,6 +5,7 @@
 #  application:
 #    name: api-gateway
 #
+#
 #  webflux:
 #    observation:
 #      enabled: true

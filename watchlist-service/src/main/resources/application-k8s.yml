@@ -11,6 +11,7 @@ spring:
       micrometer:
         enabled: true
 
+
   datasource:
     url: jdbc:postgresql://postgres:5432/watchlistdb   # Postgres service name
     username: postgres

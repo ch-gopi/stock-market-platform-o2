@@ -6,6 +6,7 @@ spring:
   application:
     name: historical-service
 
+
   datasource:
     url: jdbc:postgresql://postgres:5432/historicaldb   # Postgres service name
     username: postgres
