@@ -60,3 +60,4 @@ loki.write "default" {
 	}
 	external_labels = {}
 }
+
