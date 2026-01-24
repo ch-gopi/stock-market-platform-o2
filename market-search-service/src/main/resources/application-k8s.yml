@@ -1,0 +1,119 @@
+server:
+  port: 8090
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: market-search-service
+
+#  config:
+#    import: "optional:configserver:http://config-server:8888"
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/marketsearchdb   # Postgres service name
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  redis:
+    host: redis
+    port: 6379
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        spring.kafka.observation-enabled: true   # Kafka producer tracing
+    consumer:
+      group-id: market-search
+      auto-offset-reset: earliest
+      properties:
+        spring.kafka.observation-enabled: true   # Kafka consumer tracing
+
+  cloud:
+    openfeign:
+      micrometer:
+        enabled: true   # Feign client tracing
+
+  observation:
+    enabled: true     # Enables Micrometer observation for HTTP, Feign, Kafka, WebClient
+
+  zipkin:
+    base-url: http://zipkin:9411/   # Zipkin service name
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+  observations:
+    annotations:
+      enabled: true
+  endpoint:
+    prometheus:
+      enabled: true
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-history: 7
+      max-file-size: 5MB
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      finnhubSearch:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+  retry:
+    instances:
+      finnhubSearch:
+        maxAttempts: 3
+        waitDuration: 2s
+
+  timelimiter:
+    instances:
+      finnhubSearch:
+        timeoutDuration: 3s
+        cancelRunningFuture: true
+
+quotes-service:
+  url: http://quotes-service:8091   # Quotes service DNS name
+
+finnhub:
+  api:
+    key: d4se4apr01qvsjbh6j00d4se4apr01qvsjbh6j0g
+
+alphavantage:
+  apikey: VBMC8IRO31QQLMZD
+
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://discovery-service:8761/eureka/   # Eureka service name
+#    register-with-eureka: true
+#    fetch-registry: true
+#  instance:
+#    hostname: market-search-service
+#    prefer-ip-address: false

@@ -41,11 +41,6 @@ spring:
   config:
     import: "optional:configserver:http://localhost:8888"
 
-
-    openfeign:
-      micrometer:
-        enabled: true
-
 management:
   tracing:
     enabled: true

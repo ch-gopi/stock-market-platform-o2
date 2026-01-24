@@ -1,0 +1,35 @@
+server:
+  port: 8761
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: discovery-service
+  tracing:
+    sampling:
+      probability: 1.0
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+
+tracing:
+  enabled: true
+  sampling:
+    probability: 1.0
+zipkin:
+  tracing:
+    endpoint: http://zipkin:9411/api/v2/spans
+observations:
+  annotations:
+    enabled: true

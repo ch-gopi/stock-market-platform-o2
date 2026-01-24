@@ -1,0 +1,117 @@
+server:
+  port: 8091
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: quotes-service
+
+  kafka:
+    bootstrap-servers: kafka:9092   # Kafka service name
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false   # prevents __TypeId__ header
+
+    consumer:
+      group-id: quotes-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: com.market.common.dto.FinQuoteTickEvent
+        spring.json.trusted.packages: "*"
+
+  redis:
+    host: redis
+    port: 6379
+
+#  config:
+#    import: "optional:configserver:http://config-server:8888"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-history: 7
+      max-file-size: 5MB
+
+jwt:
+  secret: 2c1dXSuXoU0H4nQ9vN7gK2dZ9wL8fY6pJ1rV2bT6oP8=
+  expiration: 86400000   # 1 day (ms)
+
+finnhub:
+  api:
+    key: d4se4apr01qvsjbh6j00d4se4apr01qvsjbh6j0g
+
+alphavantage:
+  apikey: VBMC8IRO31QQLMZD
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      finnhub:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
+  retry:
+    instances:
+      finnhub:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+
+  bulkhead:
+    instances:
+      finnhub:
+        max-concurrent-calls: 10
+        max-wait-duration: 0
+
+quotes:
+  symbols: AAPL,MSFT,GOOGL,TSLA,AMZN,META,NFLX,NVDA,AMD,INTC,IBM,ORCL,SAP,PYPL,SQ,BA,DIS,NKE,SBUX,JPM,GS,BAC,WMT,COST,PEP,KO,XOM,CVX,UNH,PFE,^NSEI,^BSESN,^GSPC,^IXIC,^DJI
+  ticks:
+    topic: quotes.ticks
+  emit-interval-ms: 2000
+
+tracing:
+  enabled: true
+  sampling:
+    probability: 1.0
+
+zipkin:
+  tracing:
+    endpoint: http://zipkin:9411/api/v2/spans   # Zipkin service name
+
+observations:
+  annotations:
+    enabled: true
+
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://discovery-service:8761/eureka/   # Eureka service name
+#    register-with-eureka: true
+#    fetch-registry: true
+#  instance:
+#    prefer-ip-address: false
+#    hostname: quotes-service

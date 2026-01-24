@@ -1,0 +1,57 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://config-server:8888
+  cloud:
+    gateway:
+      websocket:
+        enabled: true
+      routes: # same as your original config
+      # include all your routes here unchanged
+  redis:
+    host: redis
+    port: 6379
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    prometheus:
+      enabled: true
+
+jwt:
+  secret: 2c1dXSuXoU0H4nQ9vN7gK2dZ9wL8fY6pJ1rV2bT6oP8=
+  expiration: 86400000
+
+info:
+  app:
+    name: api-gateway
+    description: Market Discovery Gateway
+    version: 1.0.0
+
+tracing:
+  enabled: true
+  sampling:
+    probability: 1.0
+zipkin:
+  tracing:
+    endpoint: http://zipkin:9411/api/v2/spans
+observations:
+  annotations:
+    enabled: true

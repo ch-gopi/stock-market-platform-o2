@@ -3,6 +3,7 @@ package com.market.watchlistservice.config;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+/*
 
 @Configuration
 public class ObservabilityConfig {
@@ -12,3 +13,4 @@ public class ObservabilityConfig {
         return ObservationRegistry.create();
     }
 }
+*/
