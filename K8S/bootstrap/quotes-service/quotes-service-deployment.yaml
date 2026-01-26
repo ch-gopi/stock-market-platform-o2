@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: quotes-service
-        image: gopi99/quotes-service:latest
+        image: cgopi/quotes-service:latest
         ports:
         - containerPort: 8091
         env:
