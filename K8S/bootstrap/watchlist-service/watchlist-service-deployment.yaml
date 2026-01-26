@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: watchlist-service
-        image: gopi99/watchlist-service:latest
+        image: cgopi/watchlist-service:latest
         ports:
         - containerPort: 8076
         env:
