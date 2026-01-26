@@ -1,0 +1,55 @@
+server:
+  port: 8888
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:/config-repo
+        git:
+          uri: https://github.com/ch-gopi/config-server-repo
+          clone-on-start: true
+          default-label: main
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    enabled: true
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-history: 7
+      max-file-size: 5MB
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+tracing:
+  enabled: true
+  sampling:
+    probability: 1.0
+zipkin:
+  tracing:
+    endpoint: http://zipkin:9411/api/v2/spans
+observations:
+  annotations:
+    enabled: true

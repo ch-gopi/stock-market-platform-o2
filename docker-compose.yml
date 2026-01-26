@@ -1,0 +1,156 @@
+version: "3.9"
+
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  kafka:
+    image: bitnami/kafka:3.7.0
+    container_name: kafka
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      ALLOW_PLAINTEXT_LISTENER: yes
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: bitnami/zookeeper:3.9.2
+    container_name: zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+    ports:
+      - "2181:2181"
+
+  zipkin:
+    image: openzipkin/zipkin:2.26
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+
+  # Core Microservices
+  discovery-service:
+    image: cgopi/discovery-service:latest
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - zipkin
+
+  config-server:
+    image: cgopi/config-server:latest
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - discovery-service
+      - zipkin
+
+  api-gateway:
+    image: cgopi/api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - discovery-service
+      - config-server
+      - zipkin
+
+  historical-service:
+    image: cgopi/historical-service:latest
+    container_name: historical-service
+    ports:
+      - "8094:8094"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+      - kafka
+      - redis
+      - discovery-service
+      - config-server
+      - zipkin
+
+  market-search-service:
+    image: cgopi/market-search-service:latest
+    container_name: market-search-service
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - discovery-service
+      - config-server
+      - zipkin
+
+  quotes-service:
+    image: cgopi/quotes-service:latest
+    container_name: quotes-service
+    ports:
+      - "8091:8091"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - redis
+      - kafka
+      - discovery-service
+      - config-server
+      - zipkin
+
+  user-service:
+    image: ccgopi/user-service:latest
+    container_name: user-service
+    ports:
+      - "8096:8096"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+      - discovery-service
+      - config-server
+      - zipkin
+
+  watchlist-service:
+    image: cgopi/watchlist-service:latest
+    container_name: watchlist-service
+    ports:
+      - "8076:8076"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - user-service
+      - discovery-service
+      - config-server
+      - zipkin
+
+volumes:
+  postgres_data:

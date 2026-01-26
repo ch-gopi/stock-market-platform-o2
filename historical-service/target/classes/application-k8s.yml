@@ -1,0 +1,79 @@
+server:
+  port: 8094
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: historical-service
+
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/historicaldb   # Postgres service name
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none   # don’t recreate schema
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: kafka:9092   # Kafka service name
+    consumer:
+      group-id: historical-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.market.historicalservice.dto.FinQuoteTickEvent
+
+#  config:
+#    import: "optional:configserver:http://config-server:8888"
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans   # Zipkin service name
+  observations:
+    annotations:
+      enabled: true
+  endpoint:
+    prometheus:
+      enabled: true
+
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://discovery-service:8761/eureka/   # Eureka service name
+#    register-with-eureka: true
+#    fetch-registry: true
+#  instance:
+#    prefer-ip-address: false
+#    hostname: historical-service
+
+alphavantage:
+  apikey: VBMC8IRO31QQLMZD
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-history: 7
+      max-file-size: 5MB
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

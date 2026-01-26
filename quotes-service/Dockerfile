@@ -1,4 +1,5 @@
-FROM eclipse-temurin:17-jdk-jammy
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY target/quotes-service-1.0.0.jar quotes-service.jar
+EXPOSE 8091
+ENTRYPOINT ["java","-jar","quotes-service.jar"]

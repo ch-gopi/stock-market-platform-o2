@@ -1,0 +1,154 @@
+#server:
+#  port: 8080   # container port (service exposes it)
+#
+#spring:
+#  application:
+#    name: api-gateway
+#
+#
+#  webflux:
+#    observation:
+#      enabled: true
+#
+#  # ? REDIS (K8s Service)
+#  redis:
+#    host: redis.infra.svc.cluster.local
+#    port: 6379
+#
+#  cloud:
+#    gateway:
+#      websocket:
+#        enabled: true
+#
+#      routes:
+#        - id: watchlist-ws
+#          uri: lb://watchlist-service
+#          predicates:
+#            - Path=/ws-watchlist/**
+#          filters:
+#            - StripPrefix=0
+#            - name: CircuitBreaker
+#              args:
+#                name: watchlistServiceCB
+#                fallbackUri: forward:/fallback/watchlist
+#            - name: RequestRateLimiter
+#              args:
+#                key-resolver: "#{@ipKeyResolver}"
+#                redis-rate-limiter.replenishRate: 10
+#                redis-rate-limiter.burstCapacity: 20
+#
+#        - id: quotes-ws
+#          uri: lb://quotes-service
+#          predicates:
+#            - Path=/ws-quotes/**
+#          filters:
+#            - StripPrefix=0
+#            - name: RequestRateLimiter
+#              args:
+#                key-resolver: "#{@ipKeyResolver}"
+#                redis-rate-limiter.replenishRate: 10
+#                redis-rate-limiter.burstCapacity: 20
+#
+#        - id: market-search
+#          uri: lb://market-search-service
+#          predicates:
+#            - Path=/search/**
+#          filters:
+#            - StripPrefix=0
+#            - name: CircuitBreaker
+#              args:
+#                name: marketSearchServiceCB
+#                fallbackUri: forward:/fallback/marketsearch
+#            - name: RequestRateLimiter
+#              args:
+#                key-resolver: "#{@ipKeyResolver}"
+#                redis-rate-limiter.replenishRate: 10
+#                redis-rate-limiter.burstCapacity: 20
+#
+#        - id: quotes-service
+#          uri: lb://quotes-service
+#          predicates:
+#            - Path=/quotes/**
+#          filters:
+#            - StripPrefix=0
+#            - name: CircuitBreaker
+#              args:
+#                name: quotesServiceCB
+#                fallbackUri: forward:/fallback/quotes
+#
+#        - id: historical-service
+#          uri: lb://historical-service
+#          predicates:
+#            - Path=/historical/**
+#          filters:
+#            - StripPrefix=0
+#            - name: CircuitBreaker
+#              args:
+#                name: historicalServiceCB
+#                fallbackUri: forward:/fallback/historical
+#
+#        - id: watchlist-service
+#          uri: lb://watchlist-service
+#          predicates:
+#            - Path=/watchlist/**
+#
+#        - id: user-service
+#          uri: lb://user-service
+#          predicates:
+#            - Path=/auth/**
+#          filters:
+#            - StripPrefix=0
+#            - name: CircuitBreaker
+#              args:
+#                name: userServiceCB
+#                fallbackUri: forward:/fallback/user
+#
+#  # ? KEYCLOAK (K8s Service)
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri: http://keycloak.auth.svc.cluster.local:8080/realms/Stock-Market-App
+#
+## ? EUREKA (K8s Service)
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://eureka.infra.svc.cluster.local:8761/eureka/
+#    register-with-eureka: true
+#    fetch-registry: true
+#  instance:
+#    prefer-ip-address: true
+#
+## ? OBSERVABILITY
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: "*"
+#  health:
+#    circuitbreakers:
+#      enabled: true
+#  metrics:
+#    tags:
+#      application: api-gateway
+#
+## ? RESILIENCE4J
+#resilience4j:
+#  circuitbreaker:
+#    instances:
+#      watchlistServiceCB:
+#        slidingWindowSize: 10
+#        minimumNumberOfCalls: 5
+#        failureRateThreshold: 50
+#        waitDurationInOpenState: 30s
+#
+## ? ZIPKIN
+#
+#  zipkin:
+#    tracing:
+#      endpoint: http://zipkin.infra.svc.cluster.local:9411/api/v2/spans
+#  tracing:
+#    enabled: true
+#    sampling:
+#      probability: 1.0

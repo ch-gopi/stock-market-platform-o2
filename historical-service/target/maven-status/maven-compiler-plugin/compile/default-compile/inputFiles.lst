@@ -1,0 +1,14 @@
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\config\KafkaConsumerConfig.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\consumer\FinQuoteTickConsumer.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\consumer\QuoteTickConsumer.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\controller\HealthController.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\controller\HistoricalController.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\dto\CandleDto.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\dto\QuoteTickEvent.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\entity\CandleEntity.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\external\AlphaVantageClient.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\external\YahooFinanceClient.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\historicalserviceApplication.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\repository\CandleRepository.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\service\CandleAggregationService.java
+C:\dev\market-platform\historical-service\src\main\java\com\market\historicalservice\service\HistoricalService.java
