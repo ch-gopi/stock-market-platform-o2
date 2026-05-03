@@ -3,19 +3,20 @@ package com.market.watchlistservice.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "watchlist")
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
+@Table(name = "watchlist")
 public class WatchlistEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
-    private Long userId;   // immutable reference
+    private Long userId;
     private String symbol;
 }
-
