@@ -24,4 +24,17 @@ public class RefreshToken {
 
     @Column(nullable = false)
     private Instant expiryDate;
+    @Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof RefreshToken)) return false;
+    RefreshToken that = (RefreshToken) o;
+    return id != null && id.equals(that.id);
+}
+
+@Override
+public int hashCode() {
+    return Objects.hashCode(id);
+}
+
 }
