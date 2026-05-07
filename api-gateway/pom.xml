@@ -12,6 +12,17 @@
     </parent>
 
     <artifactId>api-gateway</artifactId>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId>
+            <version>2024.0.2</version> <!-- aligns with Spring Boot 3.2.x -->
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 
     <build>
         <plugins>
