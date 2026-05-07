@@ -57,7 +57,10 @@ public class SecurityConfig {
                         .pathMatchers("/auth/me").authenticated()
                         .anyExchange().authenticated()
                 )
-                //  JWT validation via Keycloak
+                // enforce stateless session management
+                .sessionManagement(session -> 
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // JWT validation via Keycloak
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtDecoder(jwtDecoder())));
 
         return http.build();
