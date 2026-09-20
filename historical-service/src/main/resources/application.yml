@@ -20,6 +20,12 @@ spring:
       hibernate:
         format_sql: true
 
+  sql:
+    init:
+      mode: always   # run schema.sql against Postgres too (default is embedded-DB-only);
+                      # schema.sql only uses CREATE TABLE/INDEX IF NOT EXISTS so it's safe
+                      # to run on every startup and won't touch existing data
+
   kafka:
     consumer:
       group-id: historical-service
@@ -32,7 +38,7 @@ spring:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
-        spring.json.value.default.type: com.market.historicalservice.dto.FinQuoteTickEvent
+        spring.json.value.default.type: com.market.common.dto.FinQuoteTickEvent
 
   config:
     import: "optional:configserver:http://localhost:8888"
