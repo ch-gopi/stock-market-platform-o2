@@ -50,8 +50,7 @@ spring:
         - id: market-search
           uri: lb://market-search-service
           predicates:
-            - Path=/search
-            - Path=/search/**
+            - Path=/search,/search/**
           filters:
             - StripPrefix=0
             - name: CircuitBreaker
@@ -155,6 +154,19 @@ management:
     prometheus:
       enabled: true
 
+  metrics:
+    tags:
+      application: stock-market-platform
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  observations:
+    annotations:
+      enabled: true
 
 resilience4j:
   circuitbreaker:
@@ -198,10 +210,6 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
 
-  metrics:
-    tags:
-      application: stock-market-platform
-
 info:
   app:
     name: api-gateway
@@ -212,16 +220,4 @@ info:
     name: Market Discovery API Gateway
     version: 1.0.0
     time: 2025-12-17T12:00:00Z
-
-
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
-  zipkin:
-    tracing:
-      endpoint: http://localhost:9411/api/v2/spans
-  observations:
-    annotations:
-      enabled: true
 
