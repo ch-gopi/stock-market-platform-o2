@@ -1,15 +1,13 @@
 package com.market.watchlistservice.service;
 
-import com.market.watchlistservice.client.HistoricalClient;
+import com.market.watchlistservice.client.QuotesClient;
 import com.market.watchlistservice.dto.*;
 import com.market.watchlistservice.entity.WatchlistEntry;
 import com.market.common.dto.FinQuoteTickEvent;
 import com.market.watchlistservice.repository.WatchlistRepository;
 import lombok.extern.slf4j.Slf4j;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 @Slf4j
 @Service
@@ -17,14 +15,17 @@ public class WatchlistService {
 
     private final WatchlistRepository repo;
     private final QuoteCacheService quoteCache;
-    private final HistoricalClient historicalClient;
+    private final HistoricalDataService historicalDataService;
+    private final QuotesClient quotesClient;
 
     public WatchlistService(WatchlistRepository repo,
                             QuoteCacheService quoteCache,
-                            HistoricalClient historicalClient) {
+                            HistoricalDataService historicalDataService,
+                            QuotesClient quotesClient) {
         this.repo = repo;
         this.quoteCache = quoteCache;
-        this.historicalClient = historicalClient;
+        this.historicalDataService = historicalDataService;
+        this.quotesClient = quotesClient;
     }
 
     public List<WatchlistItemDto> getUserWatchlist(Long userId) {
@@ -34,6 +35,9 @@ public class WatchlistService {
     }
 
     public WatchlistItemDto addToWatchlist(Long userId, String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            throw new IllegalArgumentException("symbol must not be null or blank");
+        }
         String normalized = symbol.toUpperCase();
 
         repo.findByUserIdAndSymbolIgnoreCase(userId, normalized)
@@ -51,6 +55,9 @@ public class WatchlistService {
     }
 
     public void removeFromWatchlist(Long userId, String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            throw new IllegalArgumentException("symbol must not be null or blank");
+        }
         repo.findByUserId(userId).stream()
                 .filter(i -> i.getSymbol().equalsIgnoreCase(symbol))
                 .findFirst()
@@ -63,8 +70,9 @@ public class WatchlistService {
         FinQuoteTickEvent tick = quoteCache.getLatestTick(symbol);
         double prevClose = quoteCache.getPreviousClose(symbol);
 
-        // Circuit breaker applied here
-        List<CandleDto> history = getHistoryWithCircuitBreaker(symbol);
+        // Circuit breaker applied here (delegated to a separate bean so the
+        // @CircuitBreaker proxy is actually invoked - see HistoricalDataService)
+        List<CandleDto> history = historicalDataService.getHistory(symbol);
         List<Double> sparkline = history.stream()
                 .map(CandleDto::getClose)
                 .toList();
@@ -81,19 +89,29 @@ public class WatchlistService {
                     changePercent,
                     sparkline
             );
-        } else {
-            return new WatchlistItemDto(symbol, 0, 0, 0, sparkline);
         }
-    }
 
-    @CircuitBreaker(name = "historical", fallbackMethod = "fallbackHistory")
-    private List<CandleDto> getHistoryWithCircuitBreaker(String symbol) {
-        return historicalClient.getHistory(symbol, "1m");
-    }
+        // No live WebSocket tick cached yet (e.g. market closed, or the symbol just
+        // hasn't traded since quotes-service started). QuotesClient was previously
+        // defined but never actually called anywhere, so watchlist entries always
+        // showed 0.0 outside of active market hours. Fall back to the on-demand
+        // REST quote (same data source your curl test against Finnhub confirmed
+        // works and returns a value even when markets are closed).
+        try {
+            QuoteDto quote = quotesClient.getQuote(symbol);
+            if (quote != null) {
+                return new WatchlistItemDto(
+                        symbol,
+                        quote.getPrice(),
+                        quote.getChange(),
+                        quote.getChangePercent(),
+                        sparkline
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Fallback quote lookup via quotes-service failed for {}: {}", symbol, e.getMessage());
+        }
 
-    // Fallback method when historical service is unavailable
-    private List<CandleDto> fallbackHistory(String symbol, Throwable t) {
-        log.warn("Historical service unavailable for {}. Returning empty history.", symbol, t);
-        return Collections.emptyList();
+        return new WatchlistItemDto(symbol, 0, 0, 0, sparkline);
     }
 }
