@@ -10,17 +10,10 @@
   </parent>
   <artifactId>market-search-service</artifactId>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>2024.0.2</version> <!-- aligns with Spring Boot 3.2.x -->
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+  <!-- Spring Cloud BOM (2023.0.5, compatible with Spring Boot 3.2.x) is inherited
+       from the parent POM. Do NOT re-import spring-cloud-dependencies here with a
+       different version - 2024.0.x actually requires Spring Boot 3.4.x, despite
+       the comment that used to be here, and fails the compatibility verifier. -->
   <dependencies>
       <dependency>
           <groupId>io.micrometer</groupId>
@@ -101,10 +94,6 @@
           <scope>runtime</scope>
       </dependency>
 
-      <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -113,15 +102,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
-      <dependency>
-          <groupId>io.zipkin.reporter2</groupId>
-          <artifactId>zipkin-reporter-brave</artifactId>
-          <version>2.16.3</version> <!-- check for latest version -->
-      </dependency>
-      <dependency>
-          <groupId>io.micrometer</groupId>
-          <artifactId>micrometer-tracing-bridge-brave</artifactId>
-      </dependency>
       <dependency>
           <groupId>org.postgresql</groupId>
           <artifactId>postgresql</artifactId>
@@ -133,13 +113,16 @@
       <artifactId>h2</artifactId>
       <scope>runtime</scope>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-    </dependency>
       <dependency>
           <groupId>org.springframework.cloud</groupId>
           <artifactId>spring-cloud-starter-openfeign</artifactId>
+      </dependency>
+      <!-- Lets Spring Cloud OpenFeign auto-wire a MicrometerObservationCapability onto
+           Feign clients (QuotesClient, HistoricalClient) so outgoing Feign calls carry
+           the current trace/span context instead of starting disconnected new traces. -->
+      <dependency>
+          <groupId>io.github.openfeign</groupId>
+          <artifactId>feign-micrometer</artifactId>
       </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -162,13 +145,6 @@
               <version>2.2.0</version>
           </dependency>
 
-          <!-- Optional: for annotations like @CircuitBreaker, @Retry -->
-          <dependency>
-              <groupId>io.github.resilience4j</groupId>
-              <artifactId>resilience4j-spring-boot3</artifactId>
-              <version>2.2.0</version>
-          </dependency>
-
           <!-- Optional: Micrometer metrics integration -->
           <dependency>
               <groupId>io.github.resilience4j</groupId>
@@ -176,22 +152,6 @@
               <version>2.2.0</version>
           </dependency>
 
-          <!-- Optional: Prometheus metrics export -->
-          <dependency>
-              <groupId>io.micrometer</groupId>
-              <artifactId>micrometer-registry-prometheus</artifactId>
-          </dependency>
-
-      <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
       <dependency>
           <groupId>org.springframework.data</groupId>
           <artifactId>spring-data-redis</artifactId>
@@ -210,10 +170,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>16</source>
-                    <target>16</target>
-                </configuration>
+                <!-- version and <release>17</release> inherited from parent pluginManagement -->
             </plugin>
         </plugins>
     </build>
